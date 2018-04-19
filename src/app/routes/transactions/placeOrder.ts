@@ -18,6 +18,57 @@ import authentication from '../../middlewares/authentication';
 import permitScopes from '../../middlewares/permitScopes';
 import validator from '../../middlewares/validator';
 
+// tslint:disable-next-line:no-require-imports no-var-requires
+const restaurants: IRestaurantOrganization[] = require('../../../../data/organizations/restaurant.json');
+
+export interface IMenuItemOffer {
+    identifier: string;
+    typeOf: 'Offer';
+    price: number;
+    priceCurrency: kwskfs.factory.priceCurrency;
+    offeredBy?: {
+        typeOf: 'Restaurant';
+        identifier: string;
+        name: string;
+        telephone: string;
+        url: string;
+        image: string;
+    };
+}
+
+export interface IMenuItem {
+    identifier: string;
+    typeOf: 'MenuItem';
+    name: string;
+    description: string;
+    offers: IMenuItemOffer[];
+}
+
+export interface IRestaurantOrganization {
+    typeOf: 'Restaurant';
+    identifier: string;
+    aggregateRating: {
+        typeOf: 'AggregateRating';
+        ratingValue: number;
+        reviewCount: number;
+    };
+    name: string;
+    openingHours: any[];
+    telephone: string;
+    url: string;
+    image: string;
+    hasMenu: {
+        typeOf: 'Menu';
+        hasMenuSection: {
+            typeOf: 'MenuSection';
+            name: string;
+            description: string;
+            image: string[];
+            hasMenuItem: IMenuItem[];
+        }[];
+    }[];
+}
+
 const debug = createDebug('kwskfs-api:placeOrderTransactionsRouter');
 
 const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
@@ -440,6 +491,126 @@ placeOrderTransactionsRouter.post(
         }
     }
 );
+
+/**
+ * レストランメニューアイテム承認アクション
+ */
+placeOrderTransactionsRouter.post(
+    '/:transactionId/actions/authorize/menuItem',
+    permitScopes(['transactions']),
+    (__1, __2, next) => {
+        next();
+    },
+    validator,
+    rateLimit4transactionInProgress,
+    async (req, res, next) => {
+        try {
+            const action = await authorizeMenuItem(
+                req.user.sub,
+                req.params.transactionId,
+                req.body.menuItemIdentifier,
+                req.body.offerIdentifier,
+                req.body.acceptedQuantity
+            )({
+                action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
+                transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection)
+            });
+
+            res.status(CREATED).json(action);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+function authorizeMenuItem(
+    agentId: string,
+    transactionId: string,
+    menuItemIdentifier: string,
+    offerIdentifier: string,
+    acceptedQuantity: number
+): any {
+    return async (repos: {
+        action: kwskfs.repository.Action;
+        transaction: kwskfs.repository.Transaction;
+    }) => {
+        const transaction = await repos.transaction.findPlaceOrderInProgressById(transactionId);
+
+        if (transaction.agent.id !== agentId) {
+            throw new kwskfs.factory.errors.Forbidden('A specified transaction is not yours.');
+        }
+
+        // メニューアイテムリストをマージ
+        const menuItems: IMenuItem[] = [];
+        restaurants.forEach((restaurant) => {
+            restaurant.hasMenu.forEach((menu) => {
+                menu.hasMenuSection.forEach((menuSection) => {
+                    menuItems.push(...menuSection.hasMenuItem.map((i) => {
+                        return {
+                            ...i,
+                            offers: i.offers.map((o) => {
+                                return {
+                                    ...o,
+                                    offeredBy: restaurant
+                                };
+                            })
+                        };
+                    }));
+                });
+            });
+        });
+
+        // メニューアイテムの存在確認
+        const menuItem = menuItems.find((i) => i.identifier === menuItemIdentifier);
+        if (menuItem === undefined) {
+            throw new kwskfs.factory.errors.NotFound('MenuItem');
+        }
+
+        // 販売情報の存在確認
+        const acceptedOffer = menuItem.offers.find((o) => o.identifier === offerIdentifier);
+        if (acceptedOffer === undefined) {
+            throw new kwskfs.factory.errors.NotFound('Offer');
+        }
+
+        // 承認アクションを開始
+        debug('starting authorize action of menuItem...', menuItemIdentifier, offerIdentifier);
+        const actionAttributes = {
+            typeOf: kwskfs.factory.actionType.AuthorizeAction,
+            object: {
+                ...acceptedOffer,
+                acceptedQuantity: acceptedQuantity,
+                itemOffered: menuItem
+            },
+            agent: transaction.seller,
+            recipient: transaction.agent,
+            purpose: transaction
+        };
+        const action = await repos.action.start(actionAttributes);
+
+        try {
+            // 在庫確保？
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = (error instanceof Error) ? { ...error, ...{ message: error.message } } : error;
+                await repos.action.giveUp(action.typeOf, action.id, actionError);
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw new kwskfs.factory.errors.ServiceUnavailable('Unexepected error occurred.');
+        }
+
+        // アクションを完了
+        debug('ending authorize action...');
+        const result: any = {
+            price: acceptedOffer.price * acceptedQuantity,
+            priceCurrency: acceptedOffer.priceCurrency
+        };
+
+        return repos.action.complete(action.typeOf, action.id, result);
+    };
+}
 
 placeOrderTransactionsRouter.post(
     '/:transactionId/confirm',

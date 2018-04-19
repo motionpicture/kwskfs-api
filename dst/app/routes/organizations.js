@@ -16,6 +16,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const organizationsRouter = express_1.Router();
 const kwskfs = require("@motionpicture/kwskfs-domain");
+// tslint:disable-next-line:no-require-imports no-var-requires
+const restaurants = require('../../../data/organizations/restaurant.json');
 const authentication_1 = require("../middlewares/authentication");
 const permitScopes_1 = require("../middlewares/permitScopes");
 const validator_1 = require("../middlewares/validator");
@@ -37,6 +39,33 @@ organizationsRouter.get('/movieTheater', permitScopes_1.default(['aws.cognito.si
         yield repository.searchMovieTheaters({}).then((movieTheaters) => {
             res.json(movieTheaters);
         });
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+/**
+ * レストラン検索
+ */
+organizationsRouter.get('/restaurant', permitScopes_1.default(['organizations', 'organizations.read-only']), validator_1.default, (__, res, next) => __awaiter(this, void 0, void 0, function* () {
+    try {
+        res.json(restaurants);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+/**
+ * レストランに対する注文検索
+ */
+organizationsRouter.get('/restaurant/:identifier/orders', permitScopes_1.default(['organizations', 'organizations.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+    try {
+        const orderRepo = new kwskfs.repository.Order(kwskfs.mongoose.connection);
+        const orders = yield orderRepo.orderModel.find({
+            'acceptedOffers.itemOffered.provider.typeOf': 'Restaurant',
+            'acceptedOffers.itemOffered.provider.identifier': req.params.identifier
+        }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        res.json(orders);
     }
     catch (error) {
         next(error);

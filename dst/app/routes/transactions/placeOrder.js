@@ -24,6 +24,8 @@ const placeOrderTransactionsRouter = express_1.Router();
 const authentication_1 = require("../../middlewares/authentication");
 const permitScopes_1 = require("../../middlewares/permitScopes");
 const validator_1 = require("../../middlewares/validator");
+// tslint:disable-next-line:no-require-imports no-var-requires
+const restaurants = require('../../../../data/organizations/restaurant.json');
 const debug = createDebug('kwskfs-api:placeOrderTransactionsRouter');
 const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
     domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
@@ -312,6 +314,85 @@ placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/pecorino', 
         next(error);
     }
 }));
+/**
+ * レストランメニューアイテム承認アクション
+ */
+placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/menuItem', permitScopes_1.default(['transactions']), (__1, __2, next) => {
+    next();
+}, validator_1.default, rateLimit4transactionInProgress, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+    try {
+        const action = yield authorizeMenuItem(req.user.sub, req.params.transactionId, req.body.menuItemIdentifier, req.body.offerIdentifier, req.body.acceptedQuantity)({
+            action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
+            transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection)
+        });
+        res.status(http_status_1.CREATED).json(action);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+function authorizeMenuItem(agentId, transactionId, menuItemIdentifier, offerIdentifier, acceptedQuantity) {
+    return (repos) => __awaiter(this, void 0, void 0, function* () {
+        const transaction = yield repos.transaction.findPlaceOrderInProgressById(transactionId);
+        if (transaction.agent.id !== agentId) {
+            throw new kwskfs.factory.errors.Forbidden('A specified transaction is not yours.');
+        }
+        // メニューアイテムリストをマージ
+        const menuItems = [];
+        restaurants.forEach((restaurant) => {
+            restaurant.hasMenu.forEach((menu) => {
+                menu.hasMenuSection.forEach((menuSection) => {
+                    menuItems.push(...menuSection.hasMenuItem.map((i) => {
+                        return Object.assign({}, i, { offers: i.offers.map((o) => {
+                                return Object.assign({}, o, { offeredBy: restaurant });
+                            }) });
+                    }));
+                });
+            });
+        });
+        // メニューアイテムの存在確認
+        const menuItem = menuItems.find((i) => i.identifier === menuItemIdentifier);
+        if (menuItem === undefined) {
+            throw new kwskfs.factory.errors.NotFound('MenuItem');
+        }
+        // 販売情報の存在確認
+        const acceptedOffer = menuItem.offers.find((o) => o.identifier === offerIdentifier);
+        if (acceptedOffer === undefined) {
+            throw new kwskfs.factory.errors.NotFound('Offer');
+        }
+        // 承認アクションを開始
+        debug('starting authorize action of menuItem...', menuItemIdentifier, offerIdentifier);
+        const actionAttributes = {
+            typeOf: kwskfs.factory.actionType.AuthorizeAction,
+            object: Object.assign({}, acceptedOffer, { acceptedQuantity: acceptedQuantity, itemOffered: menuItem }),
+            agent: transaction.seller,
+            recipient: transaction.agent,
+            purpose: transaction
+        };
+        const action = yield repos.action.start(actionAttributes);
+        try {
+            // 在庫確保？
+        }
+        catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = (error instanceof Error) ? Object.assign({}, error, { message: error.message }) : error;
+                yield repos.action.giveUp(action.typeOf, action.id, actionError);
+            }
+            catch (__) {
+                // 失敗したら仕方ない
+            }
+            throw new kwskfs.factory.errors.ServiceUnavailable('Unexepected error occurred.');
+        }
+        // アクションを完了
+        debug('ending authorize action...');
+        const result = {
+            price: acceptedOffer.price * acceptedQuantity,
+            priceCurrency: acceptedOffer.priceCurrency
+        };
+        return repos.action.complete(action.typeOf, action.id, result);
+    });
+}
 placeOrderTransactionsRouter.post('/:transactionId/confirm', permitScopes_1.default(['aws.cognito.signin.user.admin', 'transactions']), validator_1.default, rateLimit4transactionInProgress, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         const order = yield kwskfs.service.transaction.placeOrderInProgress.confirm(req.user.sub, req.params.transactionId)({
