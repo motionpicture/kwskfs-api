@@ -1,0 +1,21 @@
+
+const request = require("request-promise-native");
+
+const accessToken = 'eyJraWQiOiJhS01rWStjZURMcmlvZlFlNGtMNHZOU1JFUWJsTVBHM0g0WFBsTE9TZVVBPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJmZWJhNGIyZi0xOTQ2LTQ3ZjUtODcxZS0wZjZjYTRmOTdlYTYiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6ImF3cy5jb2duaXRvLnNpZ25pbi51c2VyLmFkbWluIGh0dHBzOlwvXC9zc2t0cy1hcGktZGV2ZWxvcG1lbnQuYXp1cmV3ZWJzaXRlcy5uZXRcL3Blb3BsZS5vd25lcnNoaXBJbmZvcy5yZWFkLW9ubHkgcGhvbmUgb3BlbmlkIGh0dHBzOlwvXC9zc2t0cy1hcGktZGV2ZWxvcG1lbnQuYXp1cmV3ZWJzaXRlcy5uZXRcL2V2ZW50cy5yZWFkLW9ubHkgcHJvZmlsZSBodHRwczpcL1wvc3NrdHMtYXBpLWRldmVsb3BtZW50LmF6dXJld2Vic2l0ZXMubmV0XC9vcmdhbml6YXRpb25zLnJlYWQtb25seSBodHRwczpcL1wvc3NrdHMtYXBpLWRldmVsb3BtZW50LmF6dXJld2Vic2l0ZXMubmV0XC90cmFuc2FjdGlvbnMgaHR0cHM6XC9cL3Nza3RzLWFwaS1kZXZlbG9wbWVudC5henVyZXdlYnNpdGVzLm5ldFwvcGVvcGxlLmNyZWRpdENhcmRzIGVtYWlsIGh0dHBzOlwvXC9zc2t0cy1hcGktZGV2ZWxvcG1lbnQuYXp1cmV3ZWJzaXRlcy5uZXRcL3Blb3BsZS5jb250YWN0cyIsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC5hcC1ub3J0aGVhc3QtMS5hbWF6b25hd3MuY29tXC9hcC1ub3J0aGVhc3QtMV9iUWN5TEE3SnEiLCJleHAiOjE1MDM5NzU2MTksImlhdCI6MTUwMzk3MjAxOSwidmVyc2lvbiI6MiwianRpIjoiNjE4OTM4YjUtZDRkOC00ZmM4LWIyMDUtYjM4MGEzM2ZlMTk5IiwiY2xpZW50X2lkIjoiMTYxOHIzcG0xNTZ2dTA5bDZtOTR2bzF0NzIiLCJ1c2VybmFtZSI6Imlsb3ZlZ2FkZCJ9.SvEAXGM9jGtdro9udmxoE1JlT7zY8xKZ27t5g5eA2dfycjC3hMtEBIhQn628ZFxGzgxhgF_L_uIXhsvI3F0iA4nzHJ7huCqfZps4fhywPivIMkJXf5YLiCQ6-GG4X1dbqrpkRVoit2PhmQHf-pmx9lScHCshZdMywdlyJliIpHlTnLyzuWdZ7zKkK7N7BJE4BtA9xvb27LVHpJtr5Ojjhf9LcWOXhxUYdeR8M493jez6eN_421lrJC_2QsP9Qc-lgBhybq-6oO6L-FaE8KEaLfNmsj78NxzjaM0CCA6bKK7fmkk8u-yBC5dH_SgKlETUGbxe7xsaHGsHYuSMRA7_ww';
+// const accessToken = '';
+
+request.post({
+    url: `http://localhost:8081/transactions/placeOrder/start`,
+    auth: { bearer: accessToken },
+    body: {
+        // expires: 1,
+        // sellerId: '5979a3bfe53ebc2b4e6df88d'
+    },
+    json: true,
+    simple: false,
+    resolveWithFullResponse: true
+}).then((response) => {
+    console.log('response:', response.statusCode, response.body);
+}).catch((error) => {
+    console.error(error);
+});;
