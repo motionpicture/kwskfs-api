@@ -47,7 +47,7 @@ organizationsRouter.get('/movieTheater', permitScopes_1.default(['aws.cognito.si
 /**
  * レストラン検索
  */
-organizationsRouter.get('/restaurant', permitScopes_1.default(['organizations', 'organizations.read-only']), validator_1.default, (__, res, next) => __awaiter(this, void 0, void 0, function* () {
+organizationsRouter.get('/restaurant', permitScopes_1.default(['aws.cognito.signin.user.admin', 'organizations', 'organizations.read-only']), validator_1.default, (__, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         res.json(restaurants);
     }

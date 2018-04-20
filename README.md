@@ -54,7 +54,6 @@ npm start
 | `GMO_SITE_PASS`                                      | true                  |              | GMO SitePass                       |
 | `COA_ENDPOINT`                                       | true                  |              | COA API endpoint                   |
 | `COA_REFRESH_TOKEN`                                  | true                  |              | COA API refresh token              |
-| `KWSKFS_DEVELOPER_EMAIL`                             | true                  |              | 開発者通知用メールアドレス                      |
 | `REDIS_HOST`                                         | true                  |              | 在庫状況保管用Redis Cache host            |
 | `REDIS_PORT`                                         | true                  |              | 在庫状況保管用Redis Cache port            |
 | `REDIS_KEY`                                          | true                  |              | 在庫状況保管用Redis Cache key             |

@@ -55,7 +55,7 @@ organizationsRouter.get(
  */
 organizationsRouter.get(
     '/restaurant',
-    permitScopes(['organizations', 'organizations.read-only']),
+    permitScopes(['aws.cognito.signin.user.admin', 'organizations', 'organizations.read-only']),
     validator,
     async (__, res, next) => {
         try {
