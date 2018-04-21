@@ -336,7 +336,6 @@ function authorizeMenuItem(agentId, transactionId, menuItemIdentifier, offerIden
         if (transaction.agent.id !== agentId) {
             throw new kwskfs.factory.errors.Forbidden('A specified transaction is not yours.');
         }
-        throw new kwskfs.factory.errors.NotImplemented('transaction found.');
         // メニューアイテムリストをマージ
         debug('merge menu items from restaurants...', restaurants);
         const menuItems = [];
