@@ -350,6 +350,7 @@ function authorizeMenuItem(agentId, transactionId, menuItemIdentifier, offerIden
                 });
             });
         });
+        throw new kwskfs.factory.errors.NotImplemented('menu items merged.');
         // メニューアイテムの存在確認
         debug('finding menu item...', menuItemIdentifier);
         const menuItem = menuItems.find((i) => i.identifier === menuItemIdentifier);
