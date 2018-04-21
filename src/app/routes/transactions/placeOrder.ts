@@ -541,6 +541,8 @@ function authorizeMenuItem(
             throw new kwskfs.factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
+        throw new kwskfs.factory.errors.NotImplemented('transaction found.');
+
         // メニューアイテムリストをマージ
         debug('merge menu items from restaurants...', restaurants);
         const menuItems: IMenuItem[] = [];
@@ -561,8 +563,6 @@ function authorizeMenuItem(
                 });
             });
         });
-
-        throw new kwskfs.factory.errors.NotImplemented('menu items merged.');
 
         // メニューアイテムの存在確認
         debug('finding menu item...', menuItemIdentifier);
