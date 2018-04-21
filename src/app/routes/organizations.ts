@@ -1,16 +1,16 @@
 /**
  * 組織ルーター
- *
- * @ignore
  */
 
+import * as kwskfs from '@motionpicture/kwskfs-domain';
 import { Router } from 'express';
+import * as fs from 'fs';
+
 const organizationsRouter = Router();
 
-import * as kwskfs from '@motionpicture/kwskfs-domain';
-
-// tslint:disable-next-line:no-require-imports no-var-requires
-const restaurants = require('../../../data/organizations/restaurant.json');
+const restaurants: any[] = JSON.parse(
+    fs.readFileSync(`${__dirname}/../../../data/organizations/restaurant.json`, 'utf8')
+);
 
 import authentication from '../middlewares/authentication';
 import permitScopes from '../middlewares/permitScopes';

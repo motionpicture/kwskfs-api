@@ -1,7 +1,6 @@
 "use strict";
 /**
  * 注文取引ルーター
- * @ignore
  */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -16,6 +15,7 @@ const middlewares = require("@motionpicture/express-middleware");
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const createDebug = require("debug");
 const express_1 = require("express");
+const fs = require("fs");
 const http_status_1 = require("http-status");
 const redis = require("ioredis");
 const moment = require("moment");
@@ -24,8 +24,7 @@ const placeOrderTransactionsRouter = express_1.Router();
 const authentication_1 = require("../../middlewares/authentication");
 const permitScopes_1 = require("../../middlewares/permitScopes");
 const validator_1 = require("../../middlewares/validator");
-// tslint:disable-next-line:no-require-imports no-var-requires
-const restaurants = require('../../../../data/organizations/restaurant.json');
+const restaurants = JSON.parse(fs.readFileSync(`${__dirname}/../../../../data/organizations/restaurant.json`, 'utf8'));
 const debug = createDebug('kwskfs-api:placeOrderTransactionsRouter');
 const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
     domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
@@ -338,6 +337,7 @@ function authorizeMenuItem(agentId, transactionId, menuItemIdentifier, offerIden
             throw new kwskfs.factory.errors.Forbidden('A specified transaction is not yours.');
         }
         // メニューアイテムリストをマージ
+        debug('merge menu items from restaurants...', restaurants);
         const menuItems = [];
         restaurants.forEach((restaurant) => {
             restaurant.hasMenu.forEach((menu) => {
@@ -351,11 +351,13 @@ function authorizeMenuItem(agentId, transactionId, menuItemIdentifier, offerIden
             });
         });
         // メニューアイテムの存在確認
+        debug('finding menu item...', menuItemIdentifier);
         const menuItem = menuItems.find((i) => i.identifier === menuItemIdentifier);
         if (menuItem === undefined) {
             throw new kwskfs.factory.errors.NotFound('MenuItem');
         }
         // 販売情報の存在確認
+        debug('finding offer...', offerIdentifier);
         const acceptedOffer = menuItem.offers.find((o) => o.identifier === offerIdentifier);
         if (acceptedOffer === undefined) {
             throw new kwskfs.factory.errors.NotFound('Offer');

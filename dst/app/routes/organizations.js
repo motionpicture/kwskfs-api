@@ -1,8 +1,6 @@
 "use strict";
 /**
  * 組織ルーター
- *
- * @ignore
  */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -13,11 +11,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const organizationsRouter = express_1.Router();
 const kwskfs = require("@motionpicture/kwskfs-domain");
-// tslint:disable-next-line:no-require-imports no-var-requires
-const restaurants = require('../../../data/organizations/restaurant.json');
+const express_1 = require("express");
+const fs = require("fs");
+const organizationsRouter = express_1.Router();
+const restaurants = JSON.parse(fs.readFileSync(`${__dirname}/../../../data/organizations/restaurant.json`, 'utf8'));
 const authentication_1 = require("../middlewares/authentication");
 const permitScopes_1 = require("../middlewares/permitScopes");
 const validator_1 = require("../middlewares/validator");

@@ -1,12 +1,12 @@
 /**
  * 注文取引ルーター
- * @ignore
  */
 
 import * as middlewares from '@motionpicture/express-middleware';
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as createDebug from 'debug';
 import { Router } from 'express';
+import * as fs from 'fs';
 import { CREATED, NO_CONTENT, NOT_FOUND, TOO_MANY_REQUESTS } from 'http-status';
 import * as redis from 'ioredis';
 import * as moment from 'moment';
@@ -18,8 +18,9 @@ import authentication from '../../middlewares/authentication';
 import permitScopes from '../../middlewares/permitScopes';
 import validator from '../../middlewares/validator';
 
-// tslint:disable-next-line:no-require-imports no-var-requires
-const restaurants: IRestaurantOrganization[] = require('../../../../data/organizations/restaurant.json');
+const restaurants: IRestaurantOrganization[] = JSON.parse(
+    fs.readFileSync(`${__dirname}/../../../../data/organizations/restaurant.json`, 'utf8')
+);
 
 export interface IMenuItemOffer {
     identifier: string;
@@ -541,6 +542,7 @@ function authorizeMenuItem(
         }
 
         // メニューアイテムリストをマージ
+        debug('merge menu items from restaurants...', restaurants);
         const menuItems: IMenuItem[] = [];
         restaurants.forEach((restaurant) => {
             restaurant.hasMenu.forEach((menu) => {
@@ -561,12 +563,14 @@ function authorizeMenuItem(
         });
 
         // メニューアイテムの存在確認
+        debug('finding menu item...', menuItemIdentifier);
         const menuItem = menuItems.find((i) => i.identifier === menuItemIdentifier);
         if (menuItem === undefined) {
             throw new kwskfs.factory.errors.NotFound('MenuItem');
         }
 
         // 販売情報の存在確認
+        debug('finding offer...', offerIdentifier);
         const acceptedOffer = menuItem.offers.find((o) => o.identifier === offerIdentifier);
         if (acceptedOffer === undefined) {
             throw new kwskfs.factory.errors.NotFound('Offer');
