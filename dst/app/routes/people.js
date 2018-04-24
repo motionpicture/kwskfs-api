@@ -1,7 +1,6 @@
 "use strict";
 /**
  * people router
- * @module peopleRouter
  */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -139,15 +138,15 @@ peopleRouter.get('/me/accounts/actions/trade', permitScopes_1.default(['aws.cogn
     }
 }));
 /**
- * find user's reservation ownershipInfos
+ * find user's ownershipInfos
  */
-peopleRouter.get('/me/ownershipInfos/reservation', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.ownershipInfos', 'people.ownershipInfos.read-only']), (_1, _2, next) => {
+peopleRouter.get('/me/ownershipInfos/:goodType', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.ownershipInfos', 'people.ownershipInfos.read-only']), (_1, _2, next) => {
     next();
 }, validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         const repository = new kwskfs.repository.OwnershipInfo(kwskfs.mongoose.connection);
-        const ownershipInfos = yield repository.searchEventReservation({
-            eventType: kwskfs.factory.eventType.SportsEvent,
+        const ownershipInfos = yield repository.search({
+            goodType: req.params.goodType,
             ownedBy: req.user.sub,
             ownedAt: new Date()
         });

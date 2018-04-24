@@ -1,7 +1,6 @@
 "use strict";
 /**
  * orders router
- * @module ordersRouter
  */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -48,6 +47,26 @@ ordersRouter.post('/findByOrderInquiryKey', permitScopes_1.default(['aws.cognito
         yield repository.findByOrderInquiryKey(key).then((order) => {
             res.json(order);
         });
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+/**
+ * 注文検索
+ */
+ordersRouter.get('', permitScopes_1.default(['aws.cognito.signin.user.admin', 'admin']), (__1, __2, next) => {
+    next();
+}, validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+    try {
+        const orderRepo = new kwskfs.repository.Order(kwskfs.mongoose.connection);
+        const orders = yield yield orderRepo.search({
+            sellerId: req.query.sellerId,
+            customerId: req.query.customerId,
+            orderNumber: req.query.orderNumber,
+            orderStatus: req.query.orderStatus
+        });
+        res.json(orders);
     }
     catch (error) {
         next(error);

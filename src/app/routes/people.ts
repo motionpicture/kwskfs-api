@@ -1,6 +1,5 @@
 /**
  * people router
- * @module peopleRouter
  */
 
 import * as kwskfs from '@motionpicture/kwskfs-domain';
@@ -184,10 +183,10 @@ peopleRouter.get(
 );
 
 /**
- * find user's reservation ownershipInfos
+ * find user's ownershipInfos
  */
 peopleRouter.get(
-    '/me/ownershipInfos/reservation',
+    '/me/ownershipInfos/:goodType',
     permitScopes(['aws.cognito.signin.user.admin', 'people.ownershipInfos', 'people.ownershipInfos.read-only']),
     (_1, _2, next) => {
         next();
@@ -196,8 +195,8 @@ peopleRouter.get(
     async (req, res, next) => {
         try {
             const repository = new kwskfs.repository.OwnershipInfo(kwskfs.mongoose.connection);
-            const ownershipInfos = await repository.searchEventReservation({
-                eventType: kwskfs.factory.eventType.SportsEvent,
+            const ownershipInfos = await repository.search({
+                goodType: req.params.goodType,
                 ownedBy: req.user.sub,
                 ownedAt: new Date()
             });
