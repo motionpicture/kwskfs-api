@@ -196,7 +196,8 @@ peopleRouter.get(
     async (req, res, next) => {
         try {
             const repository = new kwskfs.repository.OwnershipInfo(kwskfs.mongoose.connection);
-            const ownershipInfos = await repository.searchScreeningEventReservation({
+            const ownershipInfos = await repository.searchEventReservation({
+                eventType: kwskfs.factory.eventType.SportsEvent,
                 ownedBy: req.user.sub,
                 ownedAt: new Date()
             });

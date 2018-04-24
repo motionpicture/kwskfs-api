@@ -146,7 +146,8 @@ peopleRouter.get('/me/ownershipInfos/reservation', permitScopes_1.default(['aws.
 }, validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         const repository = new kwskfs.repository.OwnershipInfo(kwskfs.mongoose.connection);
-        const ownershipInfos = yield repository.searchScreeningEventReservation({
+        const ownershipInfos = yield repository.searchEventReservation({
+            eventType: kwskfs.factory.eventType.SportsEvent,
             ownedBy: req.user.sub,
             ownedAt: new Date()
         });

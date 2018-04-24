@@ -13,41 +13,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const express_1 = require("express");
-const fs = require("fs");
 const organizationsRouter = express_1.Router();
-const restaurants = JSON.parse(fs.readFileSync(`${__dirname}/../../../data/organizations/restaurant.json`, 'utf8'));
 const authentication_1 = require("../middlewares/authentication");
 const permitScopes_1 = require("../middlewares/permitScopes");
 const validator_1 = require("../middlewares/validator");
 organizationsRouter.use(authentication_1.default);
-organizationsRouter.get('/movieTheater/:branchCode', permitScopes_1.default(['aws.cognito.signin.user.admin', 'organizations', 'organizations.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
-    try {
-        const repository = new kwskfs.repository.Organization(kwskfs.mongoose.connection);
-        yield repository.findMovieTheaterByBranchCode(req.params.branchCode).then((movieTheater) => {
-            res.json(movieTheater);
-        });
-    }
-    catch (error) {
-        next(error);
-    }
-}));
-organizationsRouter.get('/movieTheater', permitScopes_1.default(['aws.cognito.signin.user.admin', 'organizations', 'organizations.read-only']), validator_1.default, (__, res, next) => __awaiter(this, void 0, void 0, function* () {
-    try {
-        const repository = new kwskfs.repository.Organization(kwskfs.mongoose.connection);
-        yield repository.searchMovieTheaters({}).then((movieTheaters) => {
-            res.json(movieTheaters);
-        });
-    }
-    catch (error) {
-        next(error);
-    }
-}));
 /**
- * レストラン検索
+ * 組織検索
  */
-organizationsRouter.get('/restaurant', permitScopes_1.default(['aws.cognito.signin.user.admin', 'organizations', 'organizations.read-only']), validator_1.default, (__, res, next) => __awaiter(this, void 0, void 0, function* () {
+organizationsRouter.get('/:organizationType', permitScopes_1.default(['aws.cognito.signin.user.admin', 'organizations', 'organizations.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        res.json(restaurants);
+        const organizationRepo = new kwskfs.repository.Organization(kwskfs.mongoose.connection);
+        const organizations = yield organizationRepo.search({
+            typeOf: req.params.organizationType,
+            identifiers: (Array.isArray(req.query.identifiers)) ? req.query.identifiers : [],
+            limit: parseInt(req.query.limit, 10)
+        });
+        res.json(organizations);
     }
     catch (error) {
         next(error);
