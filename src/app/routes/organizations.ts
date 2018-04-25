@@ -35,26 +35,4 @@ organizationsRouter.get(
     }
 );
 
-/**
- * レストランに対する注文検索
- */
-organizationsRouter.get(
-    '/restaurant/:identifier/orders',
-    permitScopes(['organizations', 'organizations.read-only']),
-    validator,
-    async (req, res, next) => {
-        try {
-            const orderRepo = new kwskfs.repository.Order(kwskfs.mongoose.connection);
-            const orders = await orderRepo.orderModel.find({
-                'acceptedOffers.itemOffered.provider.typeOf': 'Restaurant',
-                'acceptedOffers.itemOffered.provider.identifier': req.params.identifier
-            }).exec().then((docs) => docs.map((doc) => doc.toObject()));
-
-            res.json(orders);
-        } catch (error) {
-            next(error);
-        }
-    }
-);
-
 export default organizationsRouter;

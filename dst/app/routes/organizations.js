@@ -35,20 +35,4 @@ organizationsRouter.get('/:organizationType', permitScopes_1.default(['aws.cogni
         next(error);
     }
 }));
-/**
- * レストランに対する注文検索
- */
-organizationsRouter.get('/restaurant/:identifier/orders', permitScopes_1.default(['organizations', 'organizations.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
-    try {
-        const orderRepo = new kwskfs.repository.Order(kwskfs.mongoose.connection);
-        const orders = yield orderRepo.orderModel.find({
-            'acceptedOffers.itemOffered.provider.typeOf': 'Restaurant',
-            'acceptedOffers.itemOffered.provider.identifier': req.params.identifier
-        }).exec().then((docs) => docs.map((doc) => doc.toObject()));
-        res.json(orders);
-    }
-    catch (error) {
-        next(error);
-    }
-}));
 exports.default = organizationsRouter;

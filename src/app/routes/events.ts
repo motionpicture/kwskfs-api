@@ -4,34 +4,35 @@
  * @module eventsRouter
  */
 
-// import * as kwskfs from '@motionpicture/kwskfs-domain';
+import * as kwskfs from '@motionpicture/kwskfs-domain';
 import { Router } from 'express';
 // import * as moment from 'moment';
 
 // import * as redis from '../../redis';
 import authentication from '../middlewares/authentication';
-// import permitScopes from '../middlewares/permitScopes';
-// import validator from '../middlewares/validator';
+import permitScopes from '../middlewares/permitScopes';
+import validator from '../middlewares/validator';
 
 const eventsRouter = Router();
 eventsRouter.use(authentication);
 
-// eventsRouter.get(
-//     '/individualScreeningEvent/:identifier',
-//     permitScopes(['aws.cognito.signin.user.admin', 'events', 'events.read-only']),
-//     validator,
-//     async (req, res, next) => {
-//         try {
-//             await kwskfs.service.offer.findIndividualScreeningEventByIdentifier(req.params.identifier)({
-//                 event: new kwskfs.repository.Event(kwskfs.mongoose.connection),
-//                 itemAvailability: new kwskfs.repository.itemAvailability.IndividualScreeningEvent(redis.getClient())
-//             }).then((event) => {
-//                 res.json(event);
-//             });
-//         } catch (error) {
-//             next(error);
-//         }
-//     });
+eventsRouter.get(
+    '/:eventType',
+    permitScopes(['aws.cognito.signin.user.admin', 'events', 'events.read-only']),
+    validator,
+    async (req, res, next) => {
+        try {
+            const eventRepo = new kwskfs.repository.Event(kwskfs.mongoose.connection);
+            const events = await eventRepo.search({
+                typeOf: req.params.eventType,
+                identifiers: (Array.isArray(req.query.identifiers)) ? req.query.identifiers : [],
+                limit: parseInt(req.query.limit, 10)
+            });
+            res.json(events);
+        } catch (error) {
+            next(error);
+        }
+    });
 
 // eventsRouter.get(
 //     '/individualScreeningEvent',

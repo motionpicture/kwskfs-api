@@ -4,32 +4,38 @@
  * イベントルーター
  * @module eventsRouter
  */
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-// import * as kwskfs from '@motionpicture/kwskfs-domain';
+const kwskfs = require("@motionpicture/kwskfs-domain");
 const express_1 = require("express");
 // import * as moment from 'moment';
 // import * as redis from '../../redis';
 const authentication_1 = require("../middlewares/authentication");
-// import permitScopes from '../middlewares/permitScopes';
-// import validator from '../middlewares/validator';
+const permitScopes_1 = require("../middlewares/permitScopes");
+const validator_1 = require("../middlewares/validator");
 const eventsRouter = express_1.Router();
 eventsRouter.use(authentication_1.default);
-// eventsRouter.get(
-//     '/individualScreeningEvent/:identifier',
-//     permitScopes(['aws.cognito.signin.user.admin', 'events', 'events.read-only']),
-//     validator,
-//     async (req, res, next) => {
-//         try {
-//             await kwskfs.service.offer.findIndividualScreeningEventByIdentifier(req.params.identifier)({
-//                 event: new kwskfs.repository.Event(kwskfs.mongoose.connection),
-//                 itemAvailability: new kwskfs.repository.itemAvailability.IndividualScreeningEvent(redis.getClient())
-//             }).then((event) => {
-//                 res.json(event);
-//             });
-//         } catch (error) {
-//             next(error);
-//         }
-//     });
+eventsRouter.get('/:eventType', permitScopes_1.default(['aws.cognito.signin.user.admin', 'events', 'events.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+    try {
+        const eventRepo = new kwskfs.repository.Event(kwskfs.mongoose.connection);
+        const events = yield eventRepo.search({
+            typeOf: req.params.eventType,
+            identifiers: (Array.isArray(req.query.identifiers)) ? req.query.identifiers : [],
+            limit: parseInt(req.query.limit, 10)
+        });
+        res.json(events);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
 // eventsRouter.get(
 //     '/individualScreeningEvent',
 //     permitScopes(['aws.cognito.signin.user.admin', 'events', 'events.read-only']),
