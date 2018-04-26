@@ -98,6 +98,7 @@ placeOrderTransactionsRouter.post('/start', permitScopes_1.default(['aws.cognito
             expires: expires,
             agentId: req.user.sub,
             sellerId: req.body.sellerId,
+            accessToken: req.accessToken,
             clientUser: req.user,
             passportToken: passportToken
         })({

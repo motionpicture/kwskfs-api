@@ -106,6 +106,7 @@ placeOrderTransactionsRouter.post(
                 expires: expires,
                 agentId: req.user.sub,
                 sellerId: req.body.sellerId,
+                accessToken: req.accessToken,
                 clientUser: req.user,
                 passportToken: passportToken
             })({
