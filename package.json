@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@motionpicture/express-middleware": "^0.1.0",
-    "@motionpicture/kwskfs-domain": "0.0.0-alpha.8",
+    "@motionpicture/kwskfs-domain": "0.0.0-alpha.11",
     "body-parser": "^1.18.2",
     "cors": "^2.8.4",
     "debug": "^3.1.0",
@@ -66,7 +66,7 @@
     "ts-node": "^3.3.0",
     "tslint": "^5.9.1",
     "tslint-microsoft-contrib": "^5.0.3",
-    "typescript": "^2.7.2"
+    "typescript": "^2.8.3"
   },
   "engines": {
     "node": ">=8.0.0",

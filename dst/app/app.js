@@ -88,7 +88,7 @@ app.use(expressValidator({})); // this line must be immediately after any of the
 // 静的ファイル
 // app.use(express.static(__dirname + '/../../public'));
 kwskfs.mongoose.connect(process.env.MONGOLAB_URI, mongooseConnectionOptions_1.default)
-    .then(debug)
+    .then(() => { debug('MongoDB connected.'); })
     .catch(console.error);
 // routers
 app.use('/health', health_1.default);

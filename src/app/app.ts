@@ -102,7 +102,7 @@ app.use(expressValidator({})); // this line must be immediately after any of the
 // app.use(express.static(__dirname + '/../../public'));
 
 kwskfs.mongoose.connect(<string>process.env.MONGOLAB_URI, mongooseConnectionOptions)
-    .then(debug)
+    .then(() => { debug('MongoDB connected.'); })
     .catch(console.error);
 
 // routers

@@ -97,6 +97,28 @@ peopleRouter.delete('/me/creditCards/:cardSeq', permitScopes_1.default(['aws.cog
     }
 }));
 /**
+ * Pecorino口座開設
+ */
+peopleRouter.post('/me/accounts', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+    try {
+        pecorinoOAuth2client.setCredentials({
+            access_token: req.accessToken
+        });
+        const userService = new kwskfs.pecorinoapi.service.User({
+            endpoint: process.env.PECORINO_API_ENDPOINT,
+            auth: pecorinoOAuth2client
+        });
+        const account = yield userService.openAccount({
+            name: req.body.name,
+            initialBalance: (req.body.initialBalance !== undefined) ? parseInt(req.body.initialBalance, 10) : 0
+        });
+        res.status(http_status_1.CREATED).json(account);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+/**
  * Pecorino残高照会
  */
 peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
@@ -105,12 +127,12 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
         pecorinoOAuth2client.setCredentials({
             access_token: req.accessToken
         });
-        const accountService = new kwskfs.pecorinoapi.service.Account({
+        const userService = new kwskfs.pecorinoapi.service.User({
             endpoint: process.env.PECORINO_API_ENDPOINT,
             auth: pecorinoOAuth2client
         });
-        const account = yield accountService.findById({ id: 'me' });
-        res.json(account);
+        const accounts = yield userService.findAccounts({});
+        res.json(accounts);
     }
     catch (error) {
         next(error);
@@ -119,19 +141,19 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
 /**
  * Pecorino取引履歴検索
  */
-peopleRouter.get('/me/accounts/actions/trade', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+peopleRouter.get('/me/accounts/:accountId/actions/moneyTransfer', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         // pecorino支払取引サービスクライアントを生成
         pecorinoOAuth2client.setCredentials({
             access_token: req.accessToken
         });
-        const accountService = new kwskfs.pecorinoapi.service.Account({
+        const userService = new kwskfs.pecorinoapi.service.User({
             endpoint: process.env.PECORINO_API_ENDPOINT,
             auth: pecorinoOAuth2client
         });
-        debug('finding account...', accountService);
-        const tradeActions = yield accountService.searchTransferActions({ accountId: 'me' });
-        res.json(tradeActions);
+        debug('finding account...', userService);
+        const actions = yield userService.searchMoneyTransferActions({ accountId: req.params.accountId });
+        res.json(actions);
     }
     catch (error) {
         next(error);

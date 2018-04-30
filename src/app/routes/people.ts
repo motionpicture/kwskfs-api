@@ -130,6 +130,34 @@ peopleRouter.delete(
 );
 
 /**
+ * Pecorino口座開設
+ */
+peopleRouter.post(
+    '/me/accounts',
+    permitScopes(['aws.cognito.signin.user.admin', 'people.accounts']),
+    validator,
+    async (req, res, next) => {
+        try {
+            pecorinoOAuth2client.setCredentials({
+                access_token: req.accessToken
+            });
+            const userService = new kwskfs.pecorinoapi.service.User({
+                endpoint: <string>process.env.PECORINO_API_ENDPOINT,
+                auth: pecorinoOAuth2client
+            });
+
+            const account = await userService.openAccount({
+                name: req.body.name,
+                initialBalance: (req.body.initialBalance !== undefined) ? parseInt(req.body.initialBalance, 10) : 0
+            });
+            res.status(CREATED).json(account);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+/**
  * Pecorino残高照会
  */
 peopleRouter.get(
@@ -142,13 +170,13 @@ peopleRouter.get(
             pecorinoOAuth2client.setCredentials({
                 access_token: req.accessToken
             });
-            const accountService = new kwskfs.pecorinoapi.service.Account({
+            const userService = new kwskfs.pecorinoapi.service.User({
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
                 auth: pecorinoOAuth2client
             });
 
-            const account = await accountService.findById({ id: 'me' });
-            res.json(account);
+            const accounts = await userService.findAccounts({});
+            res.json(accounts);
         } catch (error) {
             next(error);
         }
@@ -159,7 +187,7 @@ peopleRouter.get(
  * Pecorino取引履歴検索
  */
 peopleRouter.get(
-    '/me/accounts/actions/trade',
+    '/me/accounts/:accountId/actions/moneyTransfer',
     permitScopes(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']),
     validator,
     async (req, res, next) => {
@@ -168,14 +196,14 @@ peopleRouter.get(
             pecorinoOAuth2client.setCredentials({
                 access_token: req.accessToken
             });
-            const accountService = new kwskfs.pecorinoapi.service.Account({
+            const userService = new kwskfs.pecorinoapi.service.User({
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
                 auth: pecorinoOAuth2client
             });
-            debug('finding account...', accountService);
+            debug('finding account...', userService);
 
-            const tradeActions = await accountService.searchTransferActions({ accountId: 'me' });
-            res.json(tradeActions);
+            const actions = await userService.searchMoneyTransferActions({ accountId: req.params.accountId });
+            res.json(actions);
         } catch (error) {
             next(error);
         }

@@ -1,7 +1,6 @@
 /**
  * 注文取引ルーター
  */
-
 import * as middlewares from '@motionpicture/express-middleware';
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as createDebug from 'debug';
@@ -310,6 +309,7 @@ placeOrderTransactionsRouter.post(
     permitScopes(['aws.cognito.signin.user.admin', 'transactions']),
     (req, __, next) => {
         req.checkBody('price', 'invalid price').notEmpty().withMessage('price is required').isInt();
+        req.checkBody('fromAccountId', 'invalid fromAccountId').notEmpty().withMessage('fromAccountId is required');
 
         next();
     },
@@ -326,11 +326,12 @@ placeOrderTransactionsRouter.post(
                 auth: pecorinoOAuth2client
             });
 
-            const action = await kwskfs.service.transaction.placeOrderInProgress.action.authorize.pecorino.create(
-                req.user.sub,
-                req.params.transactionId,
-                req.body.price
-            )({
+            const action = await kwskfs.service.transaction.placeOrderInProgress.action.authorize.pecorino.create({
+                transactionId: req.params.transactionId,
+                price: req.body.price,
+                fromAccountId: req.body.fromAccountId,
+                notes: req.body.notes
+            })({
                 action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
                 transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
                 payTransactionService: payTransactionService

@@ -1,7 +1,4 @@
 "use strict";
-/**
- * 注文取引ルーター
- */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -11,6 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 注文取引ルーター
+ */
 const middlewares = require("@motionpicture/express-middleware");
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const createDebug = require("debug");
@@ -233,6 +233,7 @@ placeOrderTransactionsRouter.delete('/:transactionId/actions/authorize/creditCar
  */
 placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/pecorino', permitScopes_1.default(['aws.cognito.signin.user.admin', 'transactions']), (req, __, next) => {
     req.checkBody('price', 'invalid price').notEmpty().withMessage('price is required').isInt();
+    req.checkBody('fromAccountId', 'invalid fromAccountId').notEmpty().withMessage('fromAccountId is required');
     next();
 }, validator_1.default, rateLimit4transactionInProgress, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
@@ -244,7 +245,12 @@ placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/pecorino', 
             endpoint: process.env.PECORINO_API_ENDPOINT,
             auth: pecorinoOAuth2client
         });
-        const action = yield kwskfs.service.transaction.placeOrderInProgress.action.authorize.pecorino.create(req.user.sub, req.params.transactionId, req.body.price)({
+        const action = yield kwskfs.service.transaction.placeOrderInProgress.action.authorize.pecorino.create({
+            transactionId: req.params.transactionId,
+            price: req.body.price,
+            fromAccountId: req.body.fromAccountId,
+            notes: req.body.notes
+        })({
             action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
             transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
             payTransactionService: payTransactionService
