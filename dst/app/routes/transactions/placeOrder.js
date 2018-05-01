@@ -16,9 +16,10 @@ const kwskfs = require("@motionpicture/kwskfs-domain");
 const createDebug = require("debug");
 const express_1 = require("express");
 const http_status_1 = require("http-status");
-const redis = require("ioredis");
+const ioredis = require("ioredis");
 const moment = require("moment");
 // import * as request from 'request-promise-native';
+const redis = require("../../../redis");
 const placeOrderTransactionsRouter = express_1.Router();
 const authentication_1 = require("../../middlewares/authentication");
 const permitScopes_1 = require("../../middlewares/permitScopes");
@@ -37,7 +38,7 @@ const THRESHOLD = parseInt(process.env.TRANSACTION_RATE_LIMIT_THRESHOLD, 10);
  * @const
  */
 const rateLimit4transactionInProgress = middlewares.rateLimit({
-    redisClient: new redis({
+    redisClient: new ioredis({
         host: process.env.RATE_LIMIT_REDIS_HOST,
         // tslint:disable-next-line:no-magic-numbers
         port: parseInt(process.env.RATE_LIMIT_REDIS_PORT, 10),
@@ -295,7 +296,8 @@ placeOrderTransactionsRouter.post('/:transactionId/confirm', permitScopes_1.defa
         const order = yield kwskfs.service.transaction.placeOrderInProgress.confirm(req.user.sub, req.params.transactionId)({
             action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
             transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
-            organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection)
+            organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection),
+            confirmationNumber: new kwskfs.repository.ConfirmationNumber(redis.getClient())
         });
         debug('transaction confirmed', order);
         res.status(http_status_1.CREATED).json(order);

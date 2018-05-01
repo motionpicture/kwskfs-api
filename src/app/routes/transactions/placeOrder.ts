@@ -6,9 +6,11 @@ import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as createDebug from 'debug';
 import { Router } from 'express';
 import { CREATED, NO_CONTENT } from 'http-status';
-import * as redis from 'ioredis';
+import * as ioredis from 'ioredis';
 import * as moment from 'moment';
 // import * as request from 'request-promise-native';
+
+import * as redis from '../../../redis';
 
 const placeOrderTransactionsRouter = Router();
 
@@ -33,7 +35,7 @@ const THRESHOLD = parseInt(<string>process.env.TRANSACTION_RATE_LIMIT_THRESHOLD,
  */
 const rateLimit4transactionInProgress =
     middlewares.rateLimit({
-        redisClient: new redis({
+        redisClient: new ioredis({
             host: <string>process.env.RATE_LIMIT_REDIS_HOST,
             // tslint:disable-next-line:no-magic-numbers
             port: parseInt(<string>process.env.RATE_LIMIT_REDIS_PORT, 10),
@@ -394,7 +396,8 @@ placeOrderTransactionsRouter.post(
             )({
                 action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
                 transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
-                organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection)
+                organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection),
+                confirmationNumber: new kwskfs.repository.ConfirmationNumber(redis.getClient())
             });
             debug('transaction confirmed', order);
 
