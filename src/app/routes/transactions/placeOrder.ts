@@ -323,7 +323,7 @@ placeOrderTransactionsRouter.post(
             pecorinoOAuth2client.setCredentials({
                 access_token: req.accessToken
             });
-            const payTransactionService = new kwskfs.pecorinoapi.service.transaction.Pay({
+            const transferTransactionService = new kwskfs.pecorinoapi.service.transaction.Transfer({
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
                 auth: pecorinoOAuth2client
             });
@@ -335,8 +335,9 @@ placeOrderTransactionsRouter.post(
                 notes: req.body.notes
             })({
                 action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
+                organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection),
                 transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
-                payTransactionService: payTransactionService
+                transferTransactionService: transferTransactionService
             });
 
             res.status(CREATED).json(action);
