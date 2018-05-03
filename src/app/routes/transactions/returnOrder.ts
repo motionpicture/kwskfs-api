@@ -5,7 +5,7 @@
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as createDebug from 'debug';
 import { Router } from 'express';
-import { CREATED } from 'http-status';
+import { CREATED, NO_CONTENT } from 'http-status';
 import * as moment from 'moment';
 
 const returnOrderTransactionsRouter = Router();
@@ -75,6 +75,22 @@ returnOrderTransactionsRouter.post(
             debug('transaction confirmed', transactionResult);
 
             res.status(CREATED).json(transactionResult);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+returnOrderTransactionsRouter.post(
+    '/:transactionId/cancel',
+    permitScopes(['admin']),
+    validator,
+    async (req, res, next) => {
+        try {
+            await transactionRepo.cancel(kwskfs.factory.transactionType.ReturnOrder, req.params.transactionId);
+            debug('transaction canceled.');
+
+            res.status(NO_CONTENT).end();
         } catch (error) {
             next(error);
         }

@@ -352,7 +352,7 @@ placeOrderTransactionsRouter.post(
  */
 placeOrderTransactionsRouter.post(
     '/:transactionId/actions/authorize/offer/eventReservation/menuItem',
-    permitScopes(['transactions']),
+    permitScopes(['aws.cognito.signin.user.admin', 'transactions']),
     (__1, __2, next) => {
         next();
     },
@@ -410,31 +410,16 @@ placeOrderTransactionsRouter.post(
 );
 
 placeOrderTransactionsRouter.post(
-    '/:transactionId/tasks/sendEmailNotification',
-    permitScopes(['aws.cognito.signin.user.admin', 'transactions']),
+    '/:transactionId/cancel',
+    permitScopes(['admin', 'aws.cognito.signin.user.admin', 'transactions']),
     validator,
     async (req, res, next) => {
         try {
-            const task = await kwskfs.service.transaction.placeOrder.sendEmail(
-                req.params.transactionId,
-                {
-                    sender: {
-                        name: req.body.sender.name,
-                        email: req.body.sender.email
-                    },
-                    toRecipient: {
-                        name: req.body.toRecipient.name,
-                        email: req.body.toRecipient.email
-                    },
-                    about: req.body.about,
-                    text: req.body.text
-                }
-            )({
-                task: new kwskfs.repository.Task(kwskfs.mongoose.connection),
-                transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection)
-            });
+            const transactionRepo = new kwskfs.repository.Transaction(kwskfs.mongoose.connection);
+            await transactionRepo.cancel(kwskfs.factory.transactionType.PlaceOrder, req.params.transactionId);
+            debug('transaction canceled.');
 
-            res.status(CREATED).json(task);
+            res.status(NO_CONTENT).end();
         } catch (error) {
             next(error);
         }
