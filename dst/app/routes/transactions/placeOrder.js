@@ -266,7 +266,7 @@ placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/pecorino', 
 /**
  * レストランメニューアイテム承認アクション
  */
-placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/offer/eventReservation/menuItem', permitScopes_1.default(['transactions']), (__1, __2, next) => {
+placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/offer/eventReservation/menuItem', permitScopes_1.default(['aws.cognito.signin.user.admin', 'transactions']), (__1, __2, next) => {
     next();
 }, validator_1.default, rateLimit4transactionInProgress, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
@@ -307,7 +307,7 @@ placeOrderTransactionsRouter.post('/:transactionId/confirm', permitScopes_1.defa
         next(error);
     }
 }));
-placeOrderTransactionsRouter.post('/:transactionId/cancel', permitScopes_1.default(['admin', 'transactions']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+placeOrderTransactionsRouter.post('/:transactionId/cancel', permitScopes_1.default(['admin', 'aws.cognito.signin.user.admin', 'transactions']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         const transactionRepo = new kwskfs.repository.Transaction(kwskfs.mongoose.connection);
         yield transactionRepo.cancel(kwskfs.factory.transactionType.PlaceOrder, req.params.transactionId);
