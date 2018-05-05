@@ -5,7 +5,7 @@
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as createDebug from 'debug';
 import { Router } from 'express';
-import { CREATED, NO_CONTENT } from 'http-status';
+import { CREATED, FORBIDDEN, NO_CONTENT, NOT_FOUND, UNAUTHORIZED } from 'http-status';
 
 import authentication from '../middlewares/authentication';
 import permitScopes from '../middlewares/permitScopes';
@@ -15,10 +15,6 @@ import validator from '../middlewares/validator';
 const peopleRouter = Router();
 
 const debug = createDebug('kwskfs-api:routes:people');
-
-const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-    domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-});
 
 peopleRouter.use(authentication);
 peopleRouter.use(requireMember);
@@ -138,6 +134,10 @@ peopleRouter.post(
     validator,
     async (req, res, next) => {
         try {
+            const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
+                domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+            });
+
             pecorinoOAuth2client.setCredentials({
                 access_token: req.accessToken
             });
@@ -166,6 +166,10 @@ peopleRouter.get(
     validator,
     async (req, res, next) => {
         try {
+            const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
+                domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+            });
+
             // pecorino支払取引サービスクライアントを生成
             pecorinoOAuth2client.setCredentials({
                 access_token: req.accessToken
@@ -178,7 +182,21 @@ peopleRouter.get(
             const accounts = await userService.findAccounts({});
             res.json(accounts);
         } catch (error) {
-            next(error);
+            // Pecorino APIのステータスコード4xxをハンドリング
+            switch (error.code) {
+                case UNAUTHORIZED:
+                    next(new kwskfs.factory.errors.Unauthorized(error.message));
+                    break;
+                case FORBIDDEN:
+                    next(new kwskfs.factory.errors.Forbidden(error.message));
+                    break;
+                case NOT_FOUND:
+                    next(new kwskfs.factory.errors.NotFound(error.message));
+                    break;
+
+                default:
+                    next(error);
+            }
         }
     }
 );
@@ -192,7 +210,9 @@ peopleRouter.get(
     validator,
     async (req, res, next) => {
         try {
-            // pecorino支払取引サービスクライアントを生成
+            const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
+                domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+            });
             pecorinoOAuth2client.setCredentials({
                 access_token: req.accessToken
             });

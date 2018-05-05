@@ -21,6 +21,7 @@ const events_1 = require("./routes/events");
 const health_1 = require("./routes/health");
 const orders_1 = require("./routes/orders");
 const organizations_1 = require("./routes/organizations");
+const ownershipInfos_1 = require("./routes/ownershipInfos");
 const people_1 = require("./routes/people");
 const places_1 = require("./routes/places");
 const placeOrder_1 = require("./routes/transactions/placeOrder");
@@ -91,13 +92,14 @@ kwskfs.mongoose.connect(process.env.MONGOLAB_URI, mongooseConnectionOptions_1.de
     .then(() => { debug('MongoDB connected.'); })
     .catch(console.error);
 // routers
-app.use('/health', health_1.default);
 app.use('/actions', actions_1.default);
-app.use('/organizations', organizations_1.default);
+app.use('/events', events_1.default);
+app.use('/health', health_1.default);
 app.use('/orders', orders_1.default);
+app.use('/organizations', organizations_1.default);
+app.use('/ownershipInfos', ownershipInfos_1.default);
 app.use('/people', people_1.default);
 app.use('/places', places_1.default);
-app.use('/events', events_1.default);
 app.use('/transactions/placeOrder', placeOrder_1.default);
 app.use('/transactions/returnOrder', returnOrder_1.default);
 // tslint:disable-next-line:no-single-line-block-comment

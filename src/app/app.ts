@@ -23,6 +23,7 @@ import eventsRouter from './routes/events';
 import healthRouter from './routes/health';
 import ordersRouter from './routes/orders';
 import organizationsRouter from './routes/organizations';
+import ownershipInfosRouter from './routes/ownershipInfos';
 import peopleRouter from './routes/people';
 import placesRouter from './routes/places';
 import placeOrderTransactionsRouter from './routes/transactions/placeOrder';
@@ -106,13 +107,14 @@ kwskfs.mongoose.connect(<string>process.env.MONGOLAB_URI, mongooseConnectionOpti
     .catch(console.error);
 
 // routers
-app.use('/health', healthRouter);
 app.use('/actions', actionsRouter);
-app.use('/organizations', organizationsRouter);
+app.use('/events', eventsRouter);
+app.use('/health', healthRouter);
 app.use('/orders', ordersRouter);
+app.use('/organizations', organizationsRouter);
+app.use('/ownershipInfos', ownershipInfosRouter);
 app.use('/people', peopleRouter);
 app.use('/places', placesRouter);
-app.use('/events', eventsRouter);
 app.use('/transactions/placeOrder', placeOrderTransactionsRouter);
 app.use('/transactions/returnOrder', returnOrderTransactionsRouter);
 

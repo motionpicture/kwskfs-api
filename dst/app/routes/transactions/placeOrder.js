@@ -25,9 +25,6 @@ const authentication_1 = require("../../middlewares/authentication");
 const permitScopes_1 = require("../../middlewares/permitScopes");
 const validator_1 = require("../../middlewares/validator");
 const debug = createDebug('kwskfs-api:placeOrderTransactionsRouter');
-const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-    domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-});
 // tslint:disable-next-line:no-magic-numbers
 const AGGREGATION_UNIT_IN_SECONDS = parseInt(process.env.TRANSACTION_RATE_LIMIT_AGGREGATION_UNIT_IN_SECONDS, 10);
 // tslint:disable-next-line:no-magic-numbers
@@ -239,6 +236,9 @@ placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/pecorino', 
 }, validator_1.default, rateLimit4transactionInProgress, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         // pecorino支払取引サービスクライアントを生成
+        const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
+            domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+        });
         pecorinoOAuth2client.setCredentials({
             access_token: req.accessToken
         });

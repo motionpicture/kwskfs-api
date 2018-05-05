@@ -21,9 +21,6 @@ const requireMember_1 = require("../middlewares/requireMember");
 const validator_1 = require("../middlewares/validator");
 const peopleRouter = express_1.Router();
 const debug = createDebug('kwskfs-api:routes:people');
-const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-    domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-});
 peopleRouter.use(authentication_1.default);
 peopleRouter.use(requireMember_1.default);
 /**
@@ -101,6 +98,9 @@ peopleRouter.delete('/me/creditCards/:cardSeq', permitScopes_1.default(['aws.cog
  */
 peopleRouter.post('/me/accounts', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
+        const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
+            domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+        });
         pecorinoOAuth2client.setCredentials({
             access_token: req.accessToken
         });
@@ -123,6 +123,9 @@ peopleRouter.post('/me/accounts', permitScopes_1.default(['aws.cognito.signin.us
  */
 peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
+        const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
+            domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+        });
         // pecorino支払取引サービスクライアントを生成
         pecorinoOAuth2client.setCredentials({
             access_token: req.accessToken
@@ -135,7 +138,20 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
         res.json(accounts);
     }
     catch (error) {
-        next(error);
+        // Pecorino APIのステータスコード4xxをハンドリング
+        switch (error.code) {
+            case http_status_1.UNAUTHORIZED:
+                next(new kwskfs.factory.errors.Unauthorized(error.message));
+                break;
+            case http_status_1.FORBIDDEN:
+                next(new kwskfs.factory.errors.Forbidden(error.message));
+                break;
+            case http_status_1.NOT_FOUND:
+                next(new kwskfs.factory.errors.NotFound(error.message));
+                break;
+            default:
+                next(error);
+        }
     }
 }));
 /**
@@ -143,7 +159,9 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
  */
 peopleRouter.get('/me/accounts/:accountId/actions/moneyTransfer', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        // pecorino支払取引サービスクライアントを生成
+        const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
+            domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+        });
         pecorinoOAuth2client.setCredentials({
             access_token: req.accessToken
         });
