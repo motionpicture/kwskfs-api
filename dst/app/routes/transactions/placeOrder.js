@@ -298,7 +298,8 @@ placeOrderTransactionsRouter.post('/:transactionId/confirm', permitScopes_1.defa
             action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
             transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
             organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection),
-            confirmationNumber: new kwskfs.repository.ConfirmationNumber(redis.getClient())
+            confirmationNumber: new kwskfs.repository.ConfirmationNumber(redis.getClient()),
+            orderNumber: new kwskfs.repository.OrderNumber(redis.getClient())
         });
         debug('transaction confirmed', order);
         res.status(http_status_1.CREATED).json(order);
