@@ -1,11 +1,10 @@
 /**
  * people router
  */
-
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as createDebug from 'debug';
 import { Router } from 'express';
-import { CREATED, FORBIDDEN, NO_CONTENT, NOT_FOUND, UNAUTHORIZED } from 'http-status';
+import { CREATED, NO_CONTENT } from 'http-status';
 
 import authentication from '../middlewares/authentication';
 import permitScopes from '../middlewares/permitScopes';
@@ -166,37 +165,14 @@ peopleRouter.get(
     validator,
     async (req, res, next) => {
         try {
-            const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-                domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-            });
-
-            // pecorino支払取引サービスクライアントを生成
-            pecorinoOAuth2client.setCredentials({
-                access_token: req.accessToken
-            });
-            const userService = new kwskfs.pecorinoapi.service.User({
-                endpoint: <string>process.env.PECORINO_API_ENDPOINT,
-                auth: pecorinoOAuth2client
-            });
-
-            const accounts = await userService.findAccounts({});
+            const accountRepo = new kwskfs.repository.Account(
+                <string>process.env.PECORINO_API_ENDPOINT,
+                <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
+            );
+            const accounts = await accountRepo.findByAccessToken(req.accessToken);
             res.json(accounts);
         } catch (error) {
-            // Pecorino APIのステータスコード4xxをハンドリング
-            switch (error.code) {
-                case UNAUTHORIZED:
-                    next(new kwskfs.factory.errors.Unauthorized(error.message));
-                    break;
-                case FORBIDDEN:
-                    next(new kwskfs.factory.errors.Forbidden(error.message));
-                    break;
-                case NOT_FOUND:
-                    next(new kwskfs.factory.errors.NotFound(error.message));
-                    break;
-
-                default:
-                    next(error);
-            }
+            next(error);
         }
     }
 );

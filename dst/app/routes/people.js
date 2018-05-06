@@ -1,7 +1,4 @@
 "use strict";
-/**
- * people router
- */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -11,6 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * people router
+ */
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const createDebug = require("debug");
 const express_1 = require("express");
@@ -123,35 +123,12 @@ peopleRouter.post('/me/accounts', permitScopes_1.default(['aws.cognito.signin.us
  */
 peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-            domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-        });
-        // pecorino支払取引サービスクライアントを生成
-        pecorinoOAuth2client.setCredentials({
-            access_token: req.accessToken
-        });
-        const userService = new kwskfs.pecorinoapi.service.User({
-            endpoint: process.env.PECORINO_API_ENDPOINT,
-            auth: pecorinoOAuth2client
-        });
-        const accounts = yield userService.findAccounts({});
+        const accountRepo = new kwskfs.repository.Account(process.env.PECORINO_API_ENDPOINT, process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN);
+        const accounts = yield accountRepo.findByAccessToken(req.accessToken);
         res.json(accounts);
     }
     catch (error) {
-        // Pecorino APIのステータスコード4xxをハンドリング
-        switch (error.code) {
-            case http_status_1.UNAUTHORIZED:
-                next(new kwskfs.factory.errors.Unauthorized(error.message));
-                break;
-            case http_status_1.FORBIDDEN:
-                next(new kwskfs.factory.errors.Forbidden(error.message));
-                break;
-            case http_status_1.NOT_FOUND:
-                next(new kwskfs.factory.errors.NotFound(error.message));
-                break;
-            default:
-                next(error);
-        }
+        next(error);
     }
 }));
 /**
