@@ -1,9 +1,6 @@
 /**
  * redis cacheクライアント
- *
- * @module
  */
-
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as createDebug from 'debug';
 

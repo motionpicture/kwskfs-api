@@ -1,8 +1,6 @@
 /**
  * ヘルスチェックルーター
- * @ignore
  */
-
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as express from 'express';
 const healthRouter = express.Router();
@@ -51,7 +49,7 @@ healthRouter.get(
                     let givenUpChecking = false;
 
                     // redisサーバー接続が生きているかどうか確認
-                    redis.getClient().ping([], (err, reply) => {
+                    redis.getClient().ping('wakeup', (err, reply) => {
                         debug('redis ping:', err, reply);
                         // すでにあきらめていたら何もしない
                         if (givenUpChecking) {

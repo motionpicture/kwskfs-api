@@ -1,8 +1,4 @@
 "use strict";
-/**
- * ヘルスチェックルーター
- * @ignore
- */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -12,6 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * ヘルスチェックルーター
+ */
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const express = require("express");
 const healthRouter = express.Router();
@@ -48,7 +47,7 @@ healthRouter.get('', (_, res, next) => __awaiter(this, void 0, void 0, function*
             new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 let givenUpChecking = false;
                 // redisサーバー接続が生きているかどうか確認
-                redis.getClient().ping([], (err, reply) => {
+                redis.getClient().ping('wakeup', (err, reply) => {
                     debug('redis ping:', err, reply);
                     // すでにあきらめていたら何もしない
                     if (givenUpChecking) {

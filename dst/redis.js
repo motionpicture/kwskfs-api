@@ -1,10 +1,8 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * redis cacheクライアント
- *
- * @module
  */
-Object.defineProperty(exports, "__esModule", { value: true });
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const createDebug = require("debug");
 const debug = createDebug('kwskfs-api:redis');
