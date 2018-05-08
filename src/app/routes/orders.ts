@@ -1,9 +1,9 @@
 /**
  * orders router
  */
-
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import { Router } from 'express';
+import * as moment from 'moment';
 
 import authentication from '../middlewares/authentication';
 import permitScopes from '../middlewares/permitScopes';
@@ -53,7 +53,10 @@ ordersRouter.use(authentication);
 ordersRouter.get(
     '',
     permitScopes(['admin']),
-    (__1, __2, next) => {
+    (req, __2, next) => {
+        req.checkQuery('orderDateFrom').notEmpty().withMessage('required').isISO8601().withMessage('must be ISO8601');
+        req.checkQuery('orderDateThrough').notEmpty().withMessage('required').isISO8601().withMessage('must be ISO8601');
+
         next();
     },
     validator,
@@ -64,7 +67,9 @@ ordersRouter.get(
                 sellerId: req.query.sellerId,
                 customerId: req.query.customerId,
                 orderNumber: req.query.orderNumber,
-                orderStatus: req.query.orderStatus
+                orderStatus: req.query.orderStatus,
+                orderDateFrom: moment(req.query.orderDateFrom).toDate(),
+                orderDateThrough: moment(req.query.orderDateThrough).toDate()
             });
             res.json(orders);
         } catch (error) {

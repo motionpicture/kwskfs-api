@@ -1,7 +1,4 @@
 "use strict";
-/**
- * orders router
- */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -11,8 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * orders router
+ */
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const express_1 = require("express");
+const moment = require("moment");
 const authentication_1 = require("../middlewares/authentication");
 const permitScopes_1 = require("../middlewares/permitScopes");
 const validator_1 = require("../middlewares/validator");
@@ -52,7 +53,9 @@ ordersRouter.use(authentication_1.default);
 /**
  * 注文検索
  */
-ordersRouter.get('', permitScopes_1.default(['admin']), (__1, __2, next) => {
+ordersRouter.get('', permitScopes_1.default(['admin']), (req, __2, next) => {
+    req.checkQuery('orderDateFrom').notEmpty().withMessage('required').isISO8601().withMessage('must be ISO8601');
+    req.checkQuery('orderDateThrough').notEmpty().withMessage('required').isISO8601().withMessage('must be ISO8601');
     next();
 }, validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
@@ -61,7 +64,9 @@ ordersRouter.get('', permitScopes_1.default(['admin']), (__1, __2, next) => {
             sellerId: req.query.sellerId,
             customerId: req.query.customerId,
             orderNumber: req.query.orderNumber,
-            orderStatus: req.query.orderStatus
+            orderStatus: req.query.orderStatus,
+            orderDateFrom: moment(req.query.orderDateFrom).toDate(),
+            orderDateThrough: moment(req.query.orderDateThrough).toDate()
         });
         res.json(orders);
     }
