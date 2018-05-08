@@ -3,6 +3,7 @@
  */
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import { Router } from 'express';
+import { NO_CONTENT } from 'http-status';
 import * as moment from 'moment';
 
 import authentication from '../middlewares/authentication';
@@ -72,6 +73,29 @@ ordersRouter.get(
                 orderDateThrough: moment(req.query.orderDateThrough).toDate()
             });
             res.json(orders);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+/**
+ * 注文ステータスを配送済に変更する
+ */
+ordersRouter.put(
+    '/:orderNumber/orderStatus/delivered',
+    permitScopes(['admin']),
+    (_, __, next) => {
+        next();
+    },
+    validator,
+    async (req, res, next) => {
+        try {
+            await kwskfs.service.delivery.deliverOrder(req.params.orderNumber)({
+                action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
+                order: new kwskfs.repository.Order(kwskfs.mongoose.connection)
+            });
+            res.status(NO_CONTENT).end();
         } catch (error) {
             next(error);
         }

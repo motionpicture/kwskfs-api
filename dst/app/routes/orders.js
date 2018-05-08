@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const kwskfs = require("@motionpicture/kwskfs-domain");
 const express_1 = require("express");
+const http_status_1 = require("http-status");
 const moment = require("moment");
 const authentication_1 = require("../middlewares/authentication");
 const permitScopes_1 = require("../middlewares/permitScopes");
@@ -69,6 +70,23 @@ ordersRouter.get('', permitScopes_1.default(['admin']), (req, __2, next) => {
             orderDateThrough: moment(req.query.orderDateThrough).toDate()
         });
         res.json(orders);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+/**
+ * 注文ステータスを配送済に変更する
+ */
+ordersRouter.put('/:orderNumber/orderStatus/delivered', permitScopes_1.default(['admin']), (_, __, next) => {
+    next();
+}, validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+    try {
+        yield kwskfs.service.delivery.deliverOrder(req.params.orderNumber)({
+            action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
+            order: new kwskfs.repository.Order(kwskfs.mongoose.connection)
+        });
+        res.status(http_status_1.NO_CONTENT).end();
     }
     catch (error) {
         next(error);
