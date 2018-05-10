@@ -294,7 +294,11 @@ placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/offer/event
 }));
 placeOrderTransactionsRouter.post('/:transactionId/confirm', permitScopes_1.default(['aws.cognito.signin.user.admin', 'transactions']), validator_1.default, rateLimit4transactionInProgress, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        const order = yield kwskfs.service.transaction.placeOrderInProgress.confirm(req.user.sub, req.params.transactionId)({
+        const order = yield kwskfs.service.transaction.placeOrderInProgress.confirm({
+            agentId: req.user.sub,
+            transactionId: req.params.transactionId,
+            sendEmailMessage: req.body.sendEmailMessage === true
+        })({
             action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
             transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
             organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection),

@@ -390,10 +390,11 @@ placeOrderTransactionsRouter.post(
     rateLimit4transactionInProgress,
     async (req, res, next) => {
         try {
-            const order = await kwskfs.service.transaction.placeOrderInProgress.confirm(
-                req.user.sub,
-                req.params.transactionId
-            )({
+            const order = await kwskfs.service.transaction.placeOrderInProgress.confirm({
+                agentId: req.user.sub,
+                transactionId: req.params.transactionId,
+                sendEmailMessage: req.body.sendEmailMessage === true
+            })({
                 action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
                 transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
                 organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection),
