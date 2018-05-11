@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- sskts-apiを引き継いでたたき台として実装。
-
 ### Changed
 
 ### Deprecated
@@ -19,3 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v0.0.0 - 2018-05-11
+
+- sskts-apiを引き継いでたたき台として実装。
