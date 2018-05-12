@@ -20,6 +20,14 @@ import validator from '../../middlewares/validator';
 
 const debug = createDebug('kwskfs-api:placeOrderTransactionsRouter');
 
+const pecorinoAuthClient = new kwskfs.pecorinoapi.auth.ClientCredentials({
+    domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN,
+    clientId: <string>process.env.PECORINO_API_CLIENT_ID,
+    clientSecret: <string>process.env.PECORINO_API_CLIENT_SECRET,
+    scopes: [],
+    state: ''
+});
+
 // tslint:disable-next-line:no-magic-numbers
 const AGGREGATION_UNIT_IN_SECONDS = parseInt(<string>process.env.TRANSACTION_RATE_LIMIT_AGGREGATION_UNIT_IN_SECONDS, 10);
 // tslint:disable-next-line:no-magic-numbers
@@ -316,17 +324,10 @@ placeOrderTransactionsRouter.post(
     async (req, res, next) => {
         try {
             // pecorino支払取引サービスクライアントを生成
-            const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-                domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-            });
-            pecorinoOAuth2client.setCredentials({
-                access_token: req.accessToken
-            });
             const transferTransactionService = new kwskfs.pecorinoapi.service.transaction.Transfer({
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
-                auth: pecorinoOAuth2client
+                auth: pecorinoAuthClient
             });
-
             const action = await kwskfs.service.transaction.placeOrderInProgress.action.authorize.pecorino.create({
                 transactionId: req.params.transactionId,
                 price: req.body.price,
