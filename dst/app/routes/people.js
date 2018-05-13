@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * people router
  */
 const kwskfs = require("@motionpicture/kwskfs-domain");
+const AWS = require("aws-sdk");
 const createDebug = require("debug");
 const express_1 = require("express");
 const http_status_1 = require("http-status");
@@ -21,6 +22,22 @@ const requireMember_1 = require("../middlewares/requireMember");
 const validator_1 = require("../middlewares/validator");
 const peopleRouter = express_1.Router();
 const debug = createDebug('kwskfs-api:routes:people');
+const CUSTOM_ATTRIBUTE_NAME = process.env.COGNITO_ATTRIBUTE_NAME_ACCOUNT_ID;
+const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider({
+    apiVersion: 'latest',
+    region: 'ap-northeast-1',
+    credentials: new AWS.Credentials({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    })
+});
+const pecorinoAuthClient = new kwskfs.pecorinoapi.auth.ClientCredentials({
+    domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN,
+    clientId: process.env.PECORINO_API_CLIENT_ID,
+    clientSecret: process.env.PECORINO_API_CLIENT_SECRET,
+    scopes: [],
+    state: ''
+});
 peopleRouter.use(authentication_1.default);
 peopleRouter.use(requireMember_1.default);
 /**
@@ -98,20 +115,15 @@ peopleRouter.delete('/me/creditCards/:cardSeq', permitScopes_1.default(['aws.cog
  */
 peopleRouter.post('/me/accounts', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-            domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-        });
-        pecorinoOAuth2client.setCredentials({
-            access_token: req.accessToken
-        });
-        const userService = new kwskfs.pecorinoapi.service.User({
+        const accountService = new kwskfs.pecorinoapi.service.Account({
             endpoint: process.env.PECORINO_API_ENDPOINT,
-            auth: pecorinoOAuth2client
+            auth: pecorinoAuthClient
         });
-        const account = yield userService.openAccount({
+        const account = yield accountService.open({
             name: req.body.name,
             initialBalance: (req.body.initialBalance !== undefined) ? parseInt(req.body.initialBalance, 10) : 0
         });
+        yield addPecorinoAccountId(req.user.username, account.id);
         res.status(http_status_1.CREATED).json(account);
     }
     catch (error) {
@@ -123,8 +135,16 @@ peopleRouter.post('/me/accounts', permitScopes_1.default(['aws.cognito.signin.us
  */
 peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        const accountRepo = new kwskfs.repository.Account(process.env.PECORINO_API_ENDPOINT, process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN);
-        const accounts = yield accountRepo.findByAccessToken(req.accessToken);
+        if (req.user.username === undefined) {
+            throw new kwskfs.factory.errors.Forbidden('Login required');
+        }
+        const accountService = new kwskfs.pecorinoapi.service.Account({
+            endpoint: process.env.PECORINO_API_ENDPOINT,
+            auth: pecorinoAuthClient
+        });
+        const accounts = yield accountService.search({
+            accountIds: yield getAccountIds(req.user.username)
+        });
         res.json(accounts);
     }
     catch (error) {
@@ -136,18 +156,11 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
  */
 peopleRouter.get('/me/accounts/:accountId/actions/moneyTransfer', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-            domain: process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-        });
-        pecorinoOAuth2client.setCredentials({
-            access_token: req.accessToken
-        });
-        const userService = new kwskfs.pecorinoapi.service.User({
+        const accountService = new kwskfs.pecorinoapi.service.Account({
             endpoint: process.env.PECORINO_API_ENDPOINT,
-            auth: pecorinoOAuth2client
+            auth: pecorinoAuthClient
         });
-        debug('finding account...', userService);
-        const actions = yield userService.searchMoneyTransferActions({ accountId: req.params.accountId });
+        const actions = yield accountService.searchMoneyTransferActions({ accountId: req.params.accountId });
         res.json(actions);
     }
     catch (error) {
@@ -173,4 +186,54 @@ peopleRouter.get('/me/ownershipInfos/:goodType', permitScopes_1.default(['aws.co
         next(error);
     }
 }));
+function addPecorinoAccountId(username, accountId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const accountIds = yield getAccountIds(username);
+        debug('currently accountIds are', accountIds);
+        accountIds.push(accountId);
+        yield new Promise((resolve, reject) => {
+            cognitoIdentityServiceProvider.adminUpdateUserAttributes({
+                UserPoolId: process.env.COGNITO_USER_POOL_ID,
+                Username: username,
+                UserAttributes: [
+                    {
+                        Name: `custom:${CUSTOM_ATTRIBUTE_NAME}`,
+                        Value: JSON.stringify(accountIds)
+                    }
+                ]
+            }, (err) => {
+                if (err instanceof Error) {
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+        debug('accountIds adde.', accountIds);
+    });
+}
+function getAccountIds(username) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise((resolve, reject) => {
+            cognitoIdentityServiceProvider.adminGetUser({
+                UserPoolId: process.env.COGNITO_USER_POOL_ID,
+                Username: username
+            }, (err, data) => {
+                if (err instanceof Error) {
+                    reject(err);
+                }
+                else {
+                    if (data.UserAttributes === undefined) {
+                        reject(new Error('UserAttributes not found.'));
+                    }
+                    else {
+                        const attribute = data.UserAttributes.find((a) => a.Name === `custom:${CUSTOM_ATTRIBUTE_NAME}`);
+                        resolve((attribute !== undefined && attribute.Value !== undefined) ? JSON.parse(attribute.Value) : []);
+                    }
+                }
+            });
+        });
+    });
+}
 exports.default = peopleRouter;

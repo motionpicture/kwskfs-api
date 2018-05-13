@@ -2,6 +2,7 @@
  * people router
  */
 import * as kwskfs from '@motionpicture/kwskfs-domain';
+import * as AWS from 'aws-sdk';
 import * as createDebug from 'debug';
 import { Router } from 'express';
 import { CREATED, NO_CONTENT } from 'http-status';
@@ -14,6 +15,22 @@ import validator from '../middlewares/validator';
 const peopleRouter = Router();
 
 const debug = createDebug('kwskfs-api:routes:people');
+const CUSTOM_ATTRIBUTE_NAME = <string>process.env.COGNITO_ATTRIBUTE_NAME_ACCOUNT_ID;
+const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider({
+    apiVersion: 'latest',
+    region: 'ap-northeast-1',
+    credentials: new AWS.Credentials({
+        accessKeyId: <string>process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: <string>process.env.AWS_SECRET_ACCESS_KEY
+    })
+});
+const pecorinoAuthClient = new kwskfs.pecorinoapi.auth.ClientCredentials({
+    domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN,
+    clientId: <string>process.env.PECORINO_API_CLIENT_ID,
+    clientSecret: <string>process.env.PECORINO_API_CLIENT_SECRET,
+    scopes: [],
+    state: ''
+});
 
 peopleRouter.use(authentication);
 peopleRouter.use(requireMember);
@@ -133,22 +150,16 @@ peopleRouter.post(
     validator,
     async (req, res, next) => {
         try {
-            const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-                domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-            });
-
-            pecorinoOAuth2client.setCredentials({
-                access_token: req.accessToken
-            });
-            const userService = new kwskfs.pecorinoapi.service.User({
+            const accountService = new kwskfs.pecorinoapi.service.Account({
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
-                auth: pecorinoOAuth2client
+                auth: pecorinoAuthClient
             });
-
-            const account = await userService.openAccount({
+            const account = await accountService.open({
                 name: req.body.name,
                 initialBalance: (req.body.initialBalance !== undefined) ? parseInt(req.body.initialBalance, 10) : 0
             });
+            await addPecorinoAccountId(<string>req.user.username, account.id);
+
             res.status(CREATED).json(account);
         } catch (error) {
             next(error);
@@ -165,11 +176,17 @@ peopleRouter.get(
     validator,
     async (req, res, next) => {
         try {
-            const accountRepo = new kwskfs.repository.Account(
-                <string>process.env.PECORINO_API_ENDPOINT,
-                <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-            );
-            const accounts = await accountRepo.findByAccessToken(req.accessToken);
+            if (req.user.username === undefined) {
+                throw new kwskfs.factory.errors.Forbidden('Login required');
+            }
+
+            const accountService = new kwskfs.pecorinoapi.service.Account({
+                endpoint: <string>process.env.PECORINO_API_ENDPOINT,
+                auth: pecorinoAuthClient
+            });
+            const accounts = await accountService.search({
+                accountIds: await getAccountIds(req.user.username)
+            });
             res.json(accounts);
         } catch (error) {
             next(error);
@@ -186,19 +203,11 @@ peopleRouter.get(
     validator,
     async (req, res, next) => {
         try {
-            const pecorinoOAuth2client = new kwskfs.pecorinoapi.auth.OAuth2({
-                domain: <string>process.env.PECORINO_AUTHORIZE_SERVER_DOMAIN
-            });
-            pecorinoOAuth2client.setCredentials({
-                access_token: req.accessToken
-            });
-            const userService = new kwskfs.pecorinoapi.service.User({
+            const accountService = new kwskfs.pecorinoapi.service.Account({
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
-                auth: pecorinoOAuth2client
+                auth: pecorinoAuthClient
             });
-            debug('finding account...', userService);
-
-            const actions = await userService.searchMoneyTransferActions({ accountId: req.params.accountId });
+            const actions = await accountService.searchMoneyTransferActions({ accountId: req.params.accountId });
             res.json(actions);
         } catch (error) {
             next(error);
@@ -231,5 +240,56 @@ peopleRouter.get(
         }
     }
 );
+
+async function addPecorinoAccountId(username: string, accountId: string) {
+    const accountIds = await getAccountIds(username);
+    debug('currently accountIds are', accountIds);
+
+    accountIds.push(accountId);
+
+    await new Promise((resolve, reject) => {
+        cognitoIdentityServiceProvider.adminUpdateUserAttributes(
+            {
+                UserPoolId: <string>process.env.COGNITO_USER_POOL_ID,
+                Username: username,
+                UserAttributes: [
+                    {
+                        Name: `custom:${CUSTOM_ATTRIBUTE_NAME}`,
+                        Value: JSON.stringify(accountIds)
+                    }
+                ]
+            },
+            (err) => {
+                if (err instanceof Error) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+    });
+    debug('accountIds adde.', accountIds);
+}
+
+async function getAccountIds(username: string) {
+    return new Promise<string[]>((resolve, reject) => {
+        cognitoIdentityServiceProvider.adminGetUser(
+            {
+                UserPoolId: <string>process.env.COGNITO_USER_POOL_ID,
+                Username: username
+            },
+            (err, data) => {
+                if (err instanceof Error) {
+                    reject(err);
+                } else {
+                    if (data.UserAttributes === undefined) {
+                        reject(new Error('UserAttributes not found.'));
+                    } else {
+                        const attribute = data.UserAttributes.find((a) => a.Name === `custom:${CUSTOM_ATTRIBUTE_NAME}`);
+                        resolve((attribute !== undefined && attribute.Value !== undefined) ? JSON.parse(attribute.Value) : []);
+                    }
+                }
+            });
+    });
+}
 
 export default peopleRouter;
