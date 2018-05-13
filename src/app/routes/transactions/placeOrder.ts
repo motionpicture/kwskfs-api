@@ -374,7 +374,8 @@ placeOrderTransactionsRouter.post(
                 organization: new kwskfs.repository.Organization(kwskfs.mongoose.connection),
                 event: new kwskfs.repository.Event(kwskfs.mongoose.connection),
                 action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
-                transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection)
+                transaction: new kwskfs.repository.Transaction(kwskfs.mongoose.connection),
+                offerItemAvailability: new kwskfs.repository.itemAvailability.Offer(redis.getClient())
             });
 
             res.status(CREATED).json(action);
