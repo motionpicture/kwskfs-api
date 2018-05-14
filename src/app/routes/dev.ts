@@ -1,9 +1,6 @@
 /**
  * devルーター
- *
- * @ignore
  */
-
 import * as kwskfs from '@motionpicture/kwskfs-domain';
 import * as express from 'express';
 const devRouter = express.Router();
@@ -33,10 +30,9 @@ devRouter.get(
 
 devRouter.get(
     '/mongoose/connect',
-    (__, res) => {
-        kwskfs.mongoose.connect(<string>process.env.MONGOLAB_URI, <any>mongooseConnectionOptions, () => {
-            res.status(NO_CONTENT).end();
-        });
+    async (__, res) => {
+        await kwskfs.mongoose.connect(<string>process.env.MONGOLAB_URI, mongooseConnectionOptions);
+        res.status(NO_CONTENT).end();
     });
 
 export default devRouter;

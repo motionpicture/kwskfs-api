@@ -18,33 +18,8 @@ healthRouter.get(
     '',
     async (_, res, next) => {
         try {
+            await kwskfs.mongoose.connection.db.admin().ping();
             await Promise.all([
-                new Promise((resolve, reject) => {
-                    let givenUpChecking = false;
-
-                    // mongodb接続状態チェック
-                    kwskfs.mongoose.connection.db.admin().ping((err, result) => {
-                        debug('mongodb ping:', err, result);
-                        // すでにあきらめていたら何もしない
-                        if (givenUpChecking) {
-                            return;
-                        }
-
-                        if (err instanceof Error) {
-                            reject(err);
-                        } else {
-                            resolve();
-                        }
-                    });
-
-                    setTimeout(
-                        () => {
-                            givenUpChecking = true;
-                            reject(new Error('unable to check db connection'));
-                        },
-                        TIMEOUT_GIVE_UP_CHECKING_IN_MILLISECONDS
-                    );
-                }),
                 new Promise(async (resolve, reject) => {
                     let givenUpChecking = false;
 
