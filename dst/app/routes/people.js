@@ -142,11 +142,15 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
             endpoint: process.env.PECORINO_API_ENDPOINT,
             auth: pecorinoAuthClient
         });
-        const accounts = yield accountService.search({
-            ids: yield getAccountIds(req.user.username),
-            statuses: [],
-            limit: 100
-        });
+        let accounts = [];
+        const accountIds = yield getAccountIds(req.user.username);
+        if (accountIds.length > 0) {
+            accounts = yield accountService.search({
+                ids: accountIds,
+                statuses: [],
+                limit: 100
+            });
+        }
         res.json(accounts);
     }
     catch (error) {

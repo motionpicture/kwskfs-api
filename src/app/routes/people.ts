@@ -184,11 +184,15 @@ peopleRouter.get(
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
                 auth: pecorinoAuthClient
             });
-            const accounts = await accountService.search({
-                ids: await getAccountIds(req.user.username),
-                statuses: [],
-                limit: 100
-            });
+            let accounts: kwskfs.factory.pecorino.account.IAccount[] = [];
+            const accountIds = await getAccountIds(req.user.username);
+            if (accountIds.length > 0) {
+                accounts = await accountService.search({
+                    ids: accountIds,
+                    statuses: [],
+                    limit: 100
+                });
+            }
             res.json(accounts);
         } catch (error) {
             next(error);
