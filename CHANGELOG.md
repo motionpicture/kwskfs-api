@@ -16,9 +16,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 
-- 会員が口座開設時に口座リストが0にならないバグを解消。
-
 ### Security
+
+## v0.0.3 - 2018-05-14
+
+### Fixed
+
+- 会員が口座開設時に口座リストが0にならないバグを解消。
 
 ## v0.0.2 - 2018-05-14
 
