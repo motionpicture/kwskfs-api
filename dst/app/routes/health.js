@@ -22,28 +22,8 @@ const debug = createDebug('kwskfs-api:healthRouter');
 const TIMEOUT_GIVE_UP_CHECKING_IN_MILLISECONDS = 3000;
 healthRouter.get('', (_, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
+        yield kwskfs.mongoose.connection.db.admin().ping();
         yield Promise.all([
-            new Promise((resolve, reject) => {
-                let givenUpChecking = false;
-                // mongodb接続状態チェック
-                kwskfs.mongoose.connection.db.admin().ping((err, result) => {
-                    debug('mongodb ping:', err, result);
-                    // すでにあきらめていたら何もしない
-                    if (givenUpChecking) {
-                        return;
-                    }
-                    if (err instanceof Error) {
-                        reject(err);
-                    }
-                    else {
-                        resolve();
-                    }
-                });
-                setTimeout(() => {
-                    givenUpChecking = true;
-                    reject(new Error('unable to check db connection'));
-                }, TIMEOUT_GIVE_UP_CHECKING_IN_MILLISECONDS);
-            }),
             new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 let givenUpChecking = false;
                 // redisサーバー接続が生きているかどうか確認

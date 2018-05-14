@@ -185,7 +185,9 @@ peopleRouter.get(
                 auth: pecorinoAuthClient
             });
             const accounts = await accountService.search({
-                accountIds: await getAccountIds(req.user.username)
+                ids: await getAccountIds(req.user.username),
+                statuses: [],
+                limit: 100
             });
             res.json(accounts);
         } catch (error) {
