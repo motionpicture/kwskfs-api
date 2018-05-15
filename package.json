@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@motionpicture/express-middleware": "^0.1.0",
-    "@motionpicture/kwskfs-domain": "0.0.0-alpha.35",
+    "@motionpicture/kwskfs-domain": "0.0.0-alpha.36",
     "aws-sdk": "^2.238.1",
     "body-parser": "^1.18.2",
     "cors": "^2.8.4",

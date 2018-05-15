@@ -24,13 +24,12 @@ const ownershipInfoRepo = new kwskfs.repository.OwnershipInfo(kwskfs.mongoose.co
 /**
  * チケットトークンによるチェックイン
  */
-ownershipInfosRouter.post('/:goodType/:ticketToken/actions/checkIn', permitScopes_1.default(['admin']), (req, __, next) => {
-    req.checkBody('ticketToken', 'invalid ticketToken').notEmpty().withMessage('ticketToken is required');
+ownershipInfosRouter.post('/:goodType/:ticketToken/actions/checkIn', permitScopes_1.default(['admin']), (_, __, next) => {
     next();
 }, validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         // 所有権チェックアクション実行
-        const action = yield checkByTicketToken({
+        const action = yield kwskfs.service.authentication.checkInByTicketToken({
             agent: req.user,
             goodType: req.params.goodType,
             ticketToken: req.params.ticketToken
@@ -44,50 +43,6 @@ ownershipInfosRouter.post('/:goodType/:ticketToken/actions/checkIn', permitScope
         next(error);
     }
 }));
-function checkByTicketToken(params) {
-    // tslint:disable-next-line:max-func-body-length
-    return (repos) => __awaiter(this, void 0, void 0, function* () {
-        // 所有権検索
-        const doc = yield repos.ownershipInfo.ownershipInfoModel.findOne({
-            'typeOfGood.typeOf': params.goodType,
-            'typeOfGood.reservedTicket.ticketToken': {
-                $exists: true,
-                $eq: params.ticketToken
-            }
-        }).exec();
-        if (doc === null) {
-            throw new kwskfs.factory.errors.NotFound('OwnershipInfo');
-        }
-        const ownershipInfo = doc.toObject();
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO 所有期間チェック
-        // アクション開始
-        const actionAttributes = {
-            typeOf: 'CheckInAction',
-            agent: params.agent,
-            object: ownershipInfo.typeOfGood
-        };
-        const action = yield repos.action.start(actionAttributes);
-        try {
-            // 何かする？
-        }
-        catch (error) {
-            // actionにエラー結果を追加
-            try {
-                // tslint:disable-next-line:no-single-line-block-comment
-                const actionError = (error instanceof Error) ? Object.assign({}, error, { message: error.message }) : /* istanbul ignore next */ error;
-                yield repos.action.giveUp(actionAttributes.typeOf, action.id, actionError);
-            }
-            catch (__) {
-                // 失敗したら仕方ない
-            }
-            throw error;
-        }
-        // アクション完了
-        const actionResult = {};
-        return repos.action.complete(actionAttributes.typeOf, action.id, actionResult);
-    });
-}
 /**
  * 所有権に対するチェックインアクション検索
  */
@@ -95,17 +50,12 @@ ownershipInfosRouter.get('/:goodType/:ticketToken/actions/checkIn', permitScopes
     next();
 }, validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
-        // アクション検索
-        const actions = yield actionRepo.actionModel.find({
-            'object.typeOf': {
-                $exists: true,
-                $eq: req.params.goodType
-            },
-            'object.reservedTicket.ticketToken': {
-                $exists: true,
-                $eq: req.params.ticketToken
-            }
-        }).exec().then((docs) => docs.map((doc) => doc.toObject()));
+        const actions = yield kwskfs.service.authentication.searchCheckInActions({
+            goodType: req.params.goodType,
+            ticketTokens: [req.params.ticketToken]
+        })({
+            action: actionRepo
+        });
         res.json(actions);
     }
     catch (error) {
