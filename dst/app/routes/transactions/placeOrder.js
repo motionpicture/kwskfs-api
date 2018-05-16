@@ -250,7 +250,7 @@ placeOrderTransactionsRouter.post('/:transactionId/actions/authorize/pecorino', 
         const action = yield kwskfs.service.transaction.placeOrderInProgress.action.authorize.pecorino.create({
             transactionId: req.params.transactionId,
             price: req.body.price,
-            fromAccountId: req.body.fromAccountId,
+            fromAccountNumber: req.body.fromAccountId,
             notes: req.body.notes
         })({
             action: new kwskfs.repository.Action(kwskfs.mongoose.connection),
