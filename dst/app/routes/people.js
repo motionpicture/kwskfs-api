@@ -119,11 +119,13 @@ peopleRouter.post('/me/accounts', permitScopes_1.default(['aws.cognito.signin.us
             endpoint: process.env.PECORINO_API_ENDPOINT,
             auth: pecorinoAuthClient
         });
-        const account = yield accountService.open({
+        let account = yield accountService.open({
             name: req.body.name,
             initialBalance: (req.body.initialBalance !== undefined) ? parseInt(req.body.initialBalance, 10) : 0
         });
-        yield addPecorinoAccountId(req.user.username, account.id);
+        yield addPecorinoAccountId(req.user.username, account.accountNumber);
+        // 互換性維持のため、idを口座番号に置換
+        account = Object.assign({}, account, { id: account.accountNumber });
         res.status(http_status_1.CREATED).json(account);
     }
     catch (error) {
@@ -146,11 +148,15 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
         const accountIds = yield getAccountIds(req.user.username);
         if (accountIds.length > 0) {
             accounts = yield accountService.search({
-                ids: accountIds,
+                accountNumbers: accountIds,
                 statuses: [],
                 limit: 100
             });
         }
+        // 互換性維持のため、idを口座番号に置換
+        accounts = accounts.map((a) => {
+            return Object.assign({}, a, { id: a.accountNumber });
+        });
         res.json(accounts);
     }
     catch (error) {
@@ -160,13 +166,13 @@ peopleRouter.get('/me/accounts', permitScopes_1.default(['aws.cognito.signin.use
 /**
  * Pecorino取引履歴検索
  */
-peopleRouter.get('/me/accounts/:accountId/actions/moneyTransfer', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+peopleRouter.get('/me/accounts/:accountNumber/actions/moneyTransfer', permitScopes_1.default(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']), validator_1.default, (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     try {
         const accountService = new kwskfs.pecorinoapi.service.Account({
             endpoint: process.env.PECORINO_API_ENDPOINT,
             auth: pecorinoAuthClient
         });
-        const actions = yield accountService.searchMoneyTransferActions({ accountId: req.params.accountId });
+        const actions = yield accountService.searchMoneyTransferActions({ accountNumber: req.params.accountNumber });
         res.json(actions);
     }
     catch (error) {

@@ -154,12 +154,14 @@ peopleRouter.post(
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
                 auth: pecorinoAuthClient
             });
-            const account = await accountService.open({
+            let account = await accountService.open({
                 name: req.body.name,
                 initialBalance: (req.body.initialBalance !== undefined) ? parseInt(req.body.initialBalance, 10) : 0
             });
-            await addPecorinoAccountId(<string>req.user.username, account.id);
+            await addPecorinoAccountId(<string>req.user.username, account.accountNumber);
 
+            // 互換性維持のため、idを口座番号に置換
+            account = { ...account, id: account.accountNumber };
             res.status(CREATED).json(account);
         } catch (error) {
             next(error);
@@ -188,11 +190,16 @@ peopleRouter.get(
             const accountIds = await getAccountIds(req.user.username);
             if (accountIds.length > 0) {
                 accounts = await accountService.search({
-                    ids: accountIds,
+                    accountNumbers: accountIds,
                     statuses: [],
                     limit: 100
                 });
             }
+
+            // 互換性維持のため、idを口座番号に置換
+            accounts = accounts.map((a) => {
+                return { ...a, id: a.accountNumber };
+            });
             res.json(accounts);
         } catch (error) {
             next(error);
@@ -204,7 +211,7 @@ peopleRouter.get(
  * Pecorino取引履歴検索
  */
 peopleRouter.get(
-    '/me/accounts/:accountId/actions/moneyTransfer',
+    '/me/accounts/:accountNumber/actions/moneyTransfer',
     permitScopes(['aws.cognito.signin.user.admin', 'people.accounts.actions.read-only']),
     validator,
     async (req, res, next) => {
@@ -213,7 +220,7 @@ peopleRouter.get(
                 endpoint: <string>process.env.PECORINO_API_ENDPOINT,
                 auth: pecorinoAuthClient
             });
-            const actions = await accountService.searchMoneyTransferActions({ accountId: req.params.accountId });
+            const actions = await accountService.searchMoneyTransferActions({ accountNumber: req.params.accountNumber });
             res.json(actions);
         } catch (error) {
             next(error);
