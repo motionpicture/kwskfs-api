@@ -18,9 +18,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
-## v0.0.5 - 2018-05-15
+## v0.0.6 - 2018-05-16
 
 ### Changed
+
+- 口座に口座番号属性を追加。
+
+## v0.0.5 - 2018-05-15
+
 
 - メール送信元を調整。
 
